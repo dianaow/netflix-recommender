@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Add a geocoder</title>
+  <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.2.6/gsap.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Karla&family=Montserrat&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: "Karla",Helvetica,Arial,sans-serif;
+      margin: 0; 
+      padding: 0;
+    }
+    h1 {
+      font-family: 'Montserrat', sans-serif;
+      text-align: center;
+      font-size: 32px;
+    }
+
+    p {
+      font-family: "Karla",Helvetica,Arial,sans-serif;
+    }
+    a {
+      color: black;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+    a:active, a:visited {
+      text-decoration: none;
+      color: black;
+    }
+
+    #container {
+      display: flex;
+      flex-direction: row;
+      justify-content: center;
+      align-items: center;
+      width: 100vw;
+      height: 100vh;
+    }
+    #contentWrapper {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 2;
+    }
+    #imagesWrapper {
+      position: absolute;
+      width: 100%;
+      top: 0;
+      left: 0;
+    }
+    #searchWrapper {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      height: 200px;
+    }
+
+    #title {
+      display: flex;
+    }
+    #findSpan {
+      margin-right: 0.35em;
+    }
+    #searchBar {
+      display: flex;
+      font-family: 'Montserrat', sans-serif;
+      font-size: 2em;
+    }
+    .searchbar {
+      float: right;
+      color: black;
+      padding: 6px 10px;
+      width: 400px;
+      border: none;
+      margin-top: 1px;
+      margin-right: 8px;
+      font-size: 28px;
+      text-align: center;
+      font-family: 'Montserrat', sans-serif;
+      border-bottom: black solid 2px;
+    }
+    .searchbar:focus {
+      /* Stops the input box from inheriting the styling from the inputs on the request form */
+      border-bottom: black solid 2px;
+      outline: none;
+    }
+    .btn-search {
+      cursor: pointer;
+      color: black;
+      text-decoration: none !important;
+      font-size: 28px;
+      padding-top: 5px;
+      margin-right: 40px;
+    }
+    #loader, #error {
+      display: none;
+    }
+    .item{
+      font-family: "Karla",Helvetica,Arial,sans-serif;
+      padding: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div id='container'>
+    <div id="contentWrapper">
+      <div id='searchWrapper'>
+        <div id='title'><h1 id='findSpan'>Find </h1><h1>TV shows or movies on Netflix similar to</h1></div>
+        <div id='searchBar'>
+          <input class="searchbar" type="text">
+          <a id="btnSearch" class="btn-search"><i class="fa fa-search"></i></a>
+        </div> 
+        <div id='loader'><p>Loading...</p></div> 
+        <div id='error'><p>No results found. Please try another search!</p></div> 
+      </div>
+      <div id='resultsList'></div>
+    </div>
+    <div id='imagesWrapper'></div>
+  </div>
+  <script>
+
+    let counter = 0
+
+    var input = document.querySelector(".searchbar")
+
+    input.addEventListener("keyup", function(event) {
+      if (event.keyCode === 13) {
+        event.preventDefault();
+        const weights = {wActor: 1, wDirector: 1, wCategory: 0.5, wDescription: 1}
+        extractSimilarShows(input.value, weights) 
+      }
+    });
+
+    var search = document.querySelector(".btn-search")
+
+    search.addEventListener("click", function(){
+      const weights = {wActor: 1, wDirector: 1, wCategory: 0.5, wDescription: 1}
+      extractSimilarShows(input.value, weights)
+    })
+
+    async function extractActors(country, top) {
+      let response = await fetch(`/actors/${country}/${top}`);
+      let result = await response.json()
+      console.log(result)
+    }
+
+    async function extractShortestPath(from, to) {
+      let response = await fetch(`/path/${from}/${to}`);
+      let result = await response.json()
+      console.log(result)
+    }
+
+    async function extractSimilarShows(title, weights) {
+
+      document.querySelector('#loader').style.display = 'block'
+      document.getElementById('resultsList').style.opacity = 0
+      document.getElementById('imagesWrapper').innerHTML = ''
+
+      const { wActor, wDirector, wCategory, wDescription } = weights
+      let response = await fetch(`/similarity/?title=${title}&w1=${wActor}&w2=${wDirector}&w3=${wCategory}&w4=${wDescription }`)
+                      .catch( err => {
+                        document.querySelector('#error').style.display = 'block'
+                        document.querySelector('#loader').style.display = 'none'                      
+                      })
+
+      let result = await response.json()
+      console.log(result)
+      let wrapper = document.querySelector('#wrapper')
+
+      // Loader
+      if(result){
+        document.querySelector('#error').style.display = 'none'
+        document.querySelector('#loader').style.display = 'none'
+        document.getElementById('resultsList').innerHTML = ""
+      }
+
+      if(counter === 0){
+        initialAnimation()
+      }
+      
+      const imgWrapper = document.getElementById('imagesWrapper')
+      result.forEach((d,i)=>{
+        let div = imgWrapper.appendChild(document.createElement('div'))
+        let x = Math.floor(Math.random() * 90)/100 * screen.width
+        let y = Math.floor(Math.random() * 80)/100 * screen.height
+        //div.setAttribute('translate', `transform(${x}, ${y})`)
+        div.id = `img-${i}`
+        div.style.position = "absolute"
+        div.style.left = `${x}px`
+        div.style.top = `${y}px`
+        let image = div.appendChild(document.createElement('img'))
+        var downloadingImage = new Image()
+        downloadingImage.onload = function(){
+            image.src = this.src
+            image.style.width = '60%'
+            image.style.height = 'auto'
+        };
+        downloadingImage.src = d.image 
+        floating(i)
+      })
+
+      //clickToShow(tl, result)
+
+      // fade in search results list and move up
+      TweenMax.to(
+        document.getElementById('resultsList'), 2, {
+          y: -20,
+          opacity: 1
+        }
+      )
+
+      var ul = document.createElement('ol');
+      document.querySelector('#resultsList').appendChild(ul);
+      result.forEach(renderList);
+
+      function renderList(element, index, arr) {
+        var li = document.createElement('li');
+        li.setAttribute('class','item');
+        ul.appendChild(li);
+        li.innerHTML=  `<a href=${'https://www.netflix.com/title/' + element.show_id}></i>${element.title}</a>`
+        //li.innerHTML= `<i class="fa fa-film"></i>${element.title}`
+      }
+
+    }
+
+    const randomX = random(10, 12);
+    const randomY = random(20, 22);
+    const randomDelay = random(0, 1);
+    const randomTime = random(3, 5);
+    const randomTime2 = random(5, 10);
+    const randomAngle = random(8, 12);
+
+    //extractActors('South_Korea', 10)
+    //extractShortestPath('Bae_Doona', 'Gong_Yoo')
+    
+    // function clickToShow(tl, result){
+
+    //   document.addEventListener('click', function(e) {  
+    //     let id = e.target.parentNode.attributes['id'].value;
+    //     let can = document.querySelector(`#${id}`)
+    //     let moveX = screen.width/2 - can.style.left.match(/\d+/g)[0]
+    //     let moveY = screen.height/2 - can.style.top.match(/\d+/g)[0]
+
+    //     TweenLite.to(can, 1, 
+    //       {
+    //         scale: 2,
+    //         x: moveX,
+    //         y: moveY,
+    //         ease: Sine.easeInOut
+    //       });
+    //   }, false);
+
+    // }
+
+    function floating(id){
+
+      let can = document.querySelector(`#img-${id}`);
+
+      TweenLite.set(can, {
+        x: randomX(-1),
+        y: randomX(1)
+      });
+
+      moveX(can, 1);
+      moveY(can, -1);
+      //rotate(tl, can, 1);
+
+    }
+
+    function rotate(target, direction) {
+      
+      TweenLite.to(target, randomTime2(), {
+        rotation: randomAngle(direction),
+        // delay: randomDelay(),
+        ease: Sine.easeInOut,
+        onComplete: rotate,
+        onCompleteParams: [target, direction * -1]
+      });
+
+    }
+
+    function moveX(target, direction) {
+      
+      TweenLite.to(target, randomTime(), {
+        x: randomX(direction),
+        ease: Sine.easeInOut,
+        onComplete: moveX,
+        onCompleteParams: [target, direction * -1]
+      });
+
+    }
+
+    function moveY(target, direction) {
+      
+      TweenLite.to(target, randomTime(), {
+        y: randomY(direction),
+        ease: Sine.easeInOut,
+        onComplete: moveY,
+        onCompleteParams: [target, direction * -1]
+      });
+
+    }
+
+    function initialAnimation() {
+
+      // move 'find' word to the left and disappear
+      TweenMax.to(
+        document.getElementById('findSpan'), 0.8, {
+          opacity: 0
+        }
+      )
+
+      // fade out search icon
+      TweenMax.to(
+        document.getElementById('btnSearch'), 0.8, {
+          opacity: 0
+        }
+      )
+
+      // move title up
+      TweenMax.to(
+        document.querySelector("#title"), 1, {
+          x: -70,
+          y: -20
+        }
+      )
+
+      // move search bar up
+      TweenMax.to(
+        document.querySelector("#searchBar"), 1, {
+          y: -20
+        }
+      )
+
+      counter = 1
+    }
+
+    function random(min, max) {
+      const delta = max - min;
+      return (direction = 1) => (min + delta * Math.random()) * direction;
+    }
+
+  </script>
+</body>
+</html>
