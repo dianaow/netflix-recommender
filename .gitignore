@@ -1,5 +1,6 @@
 .DS_Store
 .ipynb_checkpoints
 __pycache__
-data
+data/*
+!data/raw-data/
 node_modules

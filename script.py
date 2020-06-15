@@ -8,7 +8,7 @@ from nltk.stem.snowball import SnowballStemmer
 from nltk.stem.wordnet import WordNetLemmatizer
 
 # load the data
-df = pd.read_csv('./data/netflix_titles.csv')
+df = pd.read_csv('./raw-data/netflix_titles.csv')
 # convert to datetime
 df["date_added"] = pd.to_datetime(df['date_added'])
 df['year'] = df['date_added'].dt.year

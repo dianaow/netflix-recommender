@@ -20,7 +20,7 @@ cosine_similarities = pickle.load( open( "./data/cosine_similarities.pkl", "rb" 
 
 df_photos = pd.DataFrame()
 for i in range(1000, 7000, 1000):
-  photo_data = pickle.load( open( './data/photo_url_' + str(i) + '.pkl', "rb" ) )
+  photo_data = pickle.load( open( './raw-data/photo_url_' + str(i) + '.pkl', "rb" ) )
   df_photos = pd.concat([df_photos, photo_data])
 
 ## import original data instead of dataframe of processed data
