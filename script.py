@@ -4,8 +4,6 @@ import pickle
 
 from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer
 from sklearn.metrics.pairwise import linear_kernel, cosine_similarity
-from nltk.stem.snowball import SnowballStemmer
-from nltk.stem.wordnet import WordNetLemmatizer
 
 # load the data
 df = pd.read_csv('./data/raw-data/netflix_titles.csv')
